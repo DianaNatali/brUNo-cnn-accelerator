@@ -52,7 +52,7 @@ module conv_layer (
                 .clk_i(clk_i),
                 .nreset_i(nreset_i),
                 .kernel_i(kernel_values[i]),  
-                .start_cnn_i(kernels_ready_o),  
+                .start_cnn_i(start_cnn_i),  
                 .px_rdy_i(px_rdy_i),
                 .in_value_i(in_value_i),
                 .out_px_o(out_array[i]), 

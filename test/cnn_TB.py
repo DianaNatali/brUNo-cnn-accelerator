@@ -169,7 +169,7 @@ def error_cal(sw, hw):
 async def cnn_TB(dut):
 
     array_neighbors = get_neighbor_array(img_original, array_input_image)
-    first_neighbors = array_neighbors[0]   
+    first_neighbors = array_neighbors[0]
 
     input_data_val = create_matrix_3x3(*first_neighbors, PIXEL_WIDTH_OUT)
   
@@ -177,6 +177,7 @@ async def cnn_TB(dut):
     convol_sw = []
     for i in range(KERNEL_NUM):
         random_kernel_val = np.random.rand(9)
+        print(f'Kernel {i}) {random_kernel_val}')
         convol_sw.append(convol2d_sw(first_neighbors, random_kernel_val))
         kernel = create_matrix_3x3(*random_kernel_val, PIXEL_WIDTH_OUT)
         array_kernels.append(kernel)
