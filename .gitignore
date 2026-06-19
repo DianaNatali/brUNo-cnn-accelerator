@@ -11,3 +11,4 @@ test/results.xml
 test/gate_level_netlist.v
 result_yosys.blif
 result_yosys.v
+cnn_py/data/
