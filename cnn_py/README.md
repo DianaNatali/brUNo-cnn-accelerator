@@ -7,30 +7,30 @@ designed to match the Verilog hardware implementation bit-for-bit.
 
 | File | Description |
 |------|-------------|
-| `cnn_pytorch.py` | Trains the CNN on CIFAR-10 in floating point. Exports `cnn_cifar10.pth` and `cnn_weights_float.json`. |
-| `cnn_cifar10.pth` | Best PyTorch checkpoint (68.3% test accuracy). |
+| `train.py` | Trains the CNN on CIFAR-10 in floating point (grayscale input). Exports `cnn_cifar10.pth` and `cnn_weights_float.json`. |
+| `cnn_cifar10.pth` | Best PyTorch checkpoint. |
 | `cnn_weights_float.json` | Trained weights as plain float, one entry per named parameter. |
 | `quantize_weights.py` | Converts float weights to Q4.6 fixed-point (SCALE=64, 11-bit signed). Outputs `cnn_weights_q4_6.json`. |
 | `cnn_weights_q4_6.json` | Quantized weights ready for the golden model and Verilog. |
-| `golden_model.py` | Full fixed-point inference in Python. Matches the Verilog implementation. Validates against PyTorch (95% agreement on 20 test images). |
-| `data/` | CIFAR-10 dataset downloaded automatically by PyTorch. |
+| `golden_model.py` | Full fixed-point inference in Python. Matches the Verilog implementation. Validates against PyTorch on 20 test images. |
+| `data/` | CIFAR-10 dataset — downloaded automatically by PyTorch, not included in repo. |
 
 ## Architecture
 
 ```
-Input  32x32x3  (Q1.6, 8-bit signed per channel)
+Input  32x32x1  (grayscale, Q1.6, 8-bit signed)
 Conv1  3x3,  8 filters, ReLU  →  32x32x8
 Pool1  2x2                    →  16x16x8
 Conv2  3x3, 16 filters, ReLU  →  16x16x16
 Pool2  2x2                    →   8x8x16
 Conv3  3x3, 32 filters, ReLU  →   8x8x32
 Pool3  2x2                    →   4x4x32
-Flatten                       →  512
+Flatten                       →   512
 FC1    512 → 64, ReLU
 FC2     64 → 10  (logits)
 ```
 
-~100K parameters. Trained on CIFAR-10 (10 classes, 32×32 RGB images).
+~100K parameters. Trained on CIFAR-10 (10 classes, 32×32 grayscale images).
 
 ## Fixed-point format
 
@@ -50,7 +50,7 @@ Matches `parameters.svh` in the Verilog design exactly.
 ### 1 — Train (only needed if retraining from scratch)
 ```bash
 pip install torch torchvision
-python3 cnn_pytorch.py
+python3 train.py
 ```
 Outputs: `cnn_cifar10.pth`, `cnn_weights_float.json`
 
@@ -64,8 +64,13 @@ Outputs: `cnn_weights_q4_6.json`
 ```bash
 python3 golden_model.py
 ```
-Compares fixed-point inference against PyTorch on 20 test images and prints
-layer-by-layer activation ranges for image 0.
+Compares fixed-point inference against PyTorch on 20 test images, prints
+layer-by-layer activation ranges for image 0, and saves `cifar10_predictions.png`.
+
+## Note
+
+The `data/` folder is not included in the repo. CIFAR-10 is downloaded
+automatically the first time you run any script.
 
 ## Golden model vs Verilog mapping
 
