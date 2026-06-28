@@ -1,41 +1,78 @@
-![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
+# CNN Accelerator for Image Classification
 
-# Tiny Tapeout Verilog Project Template
+Fixed-point CNN accelerator implemented in RTL, targeting image classification tasks on GF180MCU.
 
-- [Read the documentation for project](docs/info.md)
+**Team:** [NAME] — Universidad Nacional de Colombia  
+**Process:** GF180MCU  
 
-## What is Tiny Tapeout?
+## Overview
 
-Tiny Tapeout is an educational project that aims to make it easier and cheaper than ever to get your digital and analog designs manufactured on a real chip.
+This project implements the inference stage of an end-to-end image processing pipeline in silicon. The full pipeline is:
 
-To learn more and get started, visit https://tinytapeout.com.
+```
+[Preprocessing ASIC] RGB → Grayscale → Sobel → Threshold → [CNN Accelerator] → Classification output
+```
 
-## Set up your Verilog project
+The preprocessing stage is implemented in separate ASICs that feed this CNN accelerator. The accelerator covers convolutional layers, max-pooling, and fully-connected layers using fixed-point arithmetic.
 
-1. Add your Verilog files to the `src` folder.
-2. Edit the [info.yaml](info.yaml) and update information about your project, paying special attention to the `source_files` and `top_module` properties. If you are upgrading an existing Tiny Tapeout project, check out our [online info.yaml migration tool](https://tinytapeout.github.io/tt-yaml-upgrade-tool/).
-3. Edit [docs/info.md](docs/info.md) and add a description of your project.
-4. Adapt the testbench to your design. See [test/README.md](test/README.md) for more information.
+### Related repositories
 
-The GitHub action will automatically build the ASIC files using [OpenLane](https://www.zerotoasiccourse.com/terminology/openlane/).
+| Repo | Description |
+|------|-------------|
+| [ttsky_grayscale_sobel](https://github.com/DianaNatali/ttsky_grayscale_sobel) | RGB-to-grayscale + Sobel ASIC (TT06, TTsky25a) |
+| [tt_um_sobel_threshold](https://github.com/jharamirezma/tt_um_sobel_threshold) | Sobel + threshold detector ASIC (TTsky26b) |
 
-## Enable GitHub actions to build the results page
+### Tapeout history
 
-- [Enabling GitHub Pages](https://tinytapeout.com/faq/#my-github-action-is-failing-on-the-pages-part)
+| Shuttle | Process | Design | Status |
+|---------|---------|--------|--------|
+| TT06 | SKY130 | RGB-to-grayscale + Sobel edge detection | Fabricated |
+| TTsky25a | SKY130 | Same design, bug fix | Fabricated |
+| TTsky26b | SKY130B | RGB-to-grayscale + Sobel + threshold detector | Submitted |
 
-## Resources
 
-- [FAQ](https://tinytapeout.com/faq/)
-- [Digital design lessons](https://tinytapeout.com/digital_design/)
-- [Learn how semiconductors work](https://tinytapeout.com/siliwiz/)
-- [Join the community](https://tinytapeout.com/discord)
-- [Build your design locally](https://www.tinytapeout.com/guides/local-hardening/)
+## Architecture
 
-## What next?
+```
+Input  32×32×1  (grayscale)
+  ↓
+Conv1  3×3, 8 filters, ReLU  →  32×32×8
+Pool1  2×2                   →  16×16×8
+Conv2  3×3, 16 filters, ReLU →  16×16×16
+Pool2  2×2                   →   8×8×16
+Conv3  3×3, 32 filters, ReLU →   8×8×32
+Pool3  2×2                   →   4×4×32
+  ↓
+FC1    512 → 64, ReLU
+FC2     64 → 10  (logits)
+```
 
-- [Submit your design to the next shuttle](https://app.tinytapeout.com/).
-- Edit [this README](README.md) and explain your design, how it works, and how to test it.
-- Share your project on your social network of choice:
-  - LinkedIn [#tinytapeout](https://www.linkedin.com/search/results/content/?keywords=%23tinytapeout) [@TinyTapeout](https://www.linkedin.com/company/100708654/)
-  - Mastodon [#tinytapeout](https://chaos.social/tags/tinytapeout) [@matthewvenn](https://chaos.social/@matthewvenn)
-  - X (formerly Twitter) [#tinytapeout](https://twitter.com/hashtag/tinytapeout) [@tinytapeout](https://twitter.com/tinytapeout)
+## RTL Status
+
+| Block | Status |
+|-------|--------|
+| Conv1 | ✅ Complete |
+| MaxPool1 | ✅ Complete |
+| top_conv1_pool1 | ✅ Complete |
+| Conv2, Conv3 | 🔄 In progress |
+| MaxPool2, MaxPool3 | 🔄 In progress |
+| FC1, FC2 | 🔄 In progress |
+
+## Python Golden Model
+
+See [`cnn_py/README.md`](cnn_py/README.md).
+
+## Running the Testbench
+
+```bash
+cd test
+pip install -r requirements.txt
+make
+```
+
+## Tools
+
+- RTL: SystemVerilog / Verilog
+- Synthesis: OpenLane / OpenROAD / Yosys
+- Simulation: cocotb
+- Python: PyTorch, NumPy
